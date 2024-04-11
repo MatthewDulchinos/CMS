@@ -38,13 +38,13 @@ def get_code(id):
 # API endpoint to search for a code based on a phrase
 @app.route('/search', methods=['GET'])
 def search_code():
-    search_phrase = request.args.get('phrase')
+    search_phrase = '%'+'%'.join(request.args.get('phrase').split())+'%'
     if not search_phrase:
         return jsonify({'error': 'Search phrase is required'}), 400
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT code, description FROM codes WHERE description LIKE ?", ('%' + search_phrase + '%',))
+    cursor.execute("SELECT code, description FROM codes WHERE description LIKE ?", (search_phrase,))
     rows = cursor.fetchall()
     cursor.close()
 
@@ -83,7 +83,6 @@ def create_database(filepath, cursor):
     create_codes_table(cursor)
     rows = extract_rows_from_excel('codes/code_list.xlsx')
     for row in rows:
-        #print(row[0],row[1])
         cursor.execute("INSERT INTO codes (code, description) VALUES (?, ?)", (row[0], row[1]))
 
 def extract_rows_from_excel(file_path):

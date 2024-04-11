@@ -34,7 +34,7 @@ GET /code/{id}:
 
 GET /search:
 	Query parameters: 
-		prase = the keyword or keywords that you want to search for a code with
+		prase = the keyword or keywords that you want to search for a code with. Seperate keywords with spaces
 	example: http://127.0.0.1:5000/search?phrase=colonography
 	example response: 
 		[
