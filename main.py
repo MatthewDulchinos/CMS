@@ -30,12 +30,13 @@ def close_connection(exception):
 def get_code(id):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT code, description FROM codes WHERE code=?", (id,))
-    row = cursor.fetchone()
+    cursor.execute("SELECT code, description FROM codes WHERE code LIKE ?", (f"%{id}%",))
+    rows = cursor.fetchall()
     cursor.close()
-    if row:
-        code, description = row
-        return jsonify({'code': code, 'description': description})
+    toReturn = []
+    if rows:
+        results = [{'code': row[0], 'description': row[1]} for row in rows]
+        return jsonify(results)
     else:
         return jsonify({'error': 'Code not found'}), 404
 

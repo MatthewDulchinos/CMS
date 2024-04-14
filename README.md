@@ -35,11 +35,13 @@ GET /code/{id}:
 		id = the identify code  
 	example: http://127.0.0.1:5000/code/Q9982  
 	example response:  
-		{  
-    		"code": "Q9982",  
-    		"description": "Flutemetamol f18 diagnostic"  
-		}  
-	Functionality: fetches the description for a given code, returns 404 if the code isnt in the database  
+		[  
+			{  
+    			"code": "Q9982",  
+    			"description": "Flutemetamol f18 diagnostic"  
+			}  
+		]  
+	Functionality: fetches the description for a given code, returns 404 if the code isnt in the database. If you only include part of a code, you will get all the matching codes (try "Q9" to see this)  
   
 GET /search:  
 	Query parameters:   
@@ -62,7 +64,7 @@ GET /info/{id}:
 	path parameters:  
 		id = the identify code  
 	Query parameters: 
-		OPEN_API_KEY = an open api secret key (Get one from here assuming you have a chatGPT account: https://platform.openai.com/account/api-keys)
+		OPEN_API_KEY = an open api secret key (Get one from here assuming you have a chatGPT account: https://platform.openai.com/account/api-keys)  
 	example: http://127.0.0.1:5000/info/Q9982?OPEN_API_KEY=ff-ffffffffffffffff  
 	example response:   
 		content='The HCPCS code Q9982 and description "Flutemetamol f18 diagnostic" refer to a specific diagnostic radiopharmaceutical used in imaging studies, particularly in PET scans to detect beta-amyloid plaques in the brain. This procedure is commonly used in the diagnosis of Alzheimer\'s disease and other neurodegenerative disorders.'
@@ -77,4 +79,4 @@ GET /relationship/
     		"86930",  
     		"86931"  
 		]  
-	Functionality: This is a demo of how we could use market basket analysis to recommend potential matches of codes. This current implementation uses fictional data for just the codes: [86930,86931,86950,71046,71100] so if you try to use a differnt code, it will error out. In the future however, this could be replaced with actual data to be able to predict this.
+	Functionality: This is a demo of how we could use market basket analysis (https://towardsdatascience.com/a-gentle-introduction-on-market-basket-analysis-association-rules-fa4b986a40ce) to recommend potential matches of codes. This current implementation uses fictional data for just the codes: [86930,86931,86950,71046,71100] so if you try to use a differnt code, it will error out. In the future however, this could be replaced with actual data to be able to predict this.
