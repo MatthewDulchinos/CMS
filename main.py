@@ -2,13 +2,17 @@
 
 from flask import Flask, jsonify, request, g
 from langchain_openai import ChatOpenAI
+from mlxtend.frequent_patterns import apriori, association_rules
 import openpyxl
 import sqlite3
 import argparse
 import os
+import pandas as pd
+import pickle
 
 app = Flask(__name__)
 DATABASE = 'codes.db'
+ASSOCIATIONS = 'association_rules.pkl'
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -54,6 +58,46 @@ def search_code():
     else:
         return jsonify({'error': 'No codes found for the search phrase'}), 404
 
+def create_associations():
+    df = pd.read_csv('codes/transactions.csv')
+    df = df.set_index('Transaction_ID')
+
+    frequent_itemsets = apriori(df, min_support=0.05, use_colnames=True)
+
+    # Generate association rules and pickle them for future use.
+    rules = association_rules(frequent_itemsets, metric='confidence', min_threshold=0.6)
+    with open(ASSOCIATIONS, 'wb') as f:
+        pickle.dump(rules, f)
+
+# API endpoint to search for a code based on a phrase
+@app.route('/relationship', methods=['GET'])
+def relationships():
+    codes = request.args.get('codes').split()
+    input_set = set(codes)
+
+    with open('association_rules.pkl', 'rb') as f:
+        rules = pickle.load(f)
+    recommendations = []
+    try:
+        for index, rule in rules.iterrows():
+            # Get the antecedent and consequent of the rule
+            antecedent = set(rule['antecedents'])
+            consequent = set(rule['consequents'])
+            
+            # Check if the input items match the antecedent of the rule
+            if antecedent.issubset(input_set):
+                recommendations.append(consequent)
+
+        # Combine all recommendations into a set to remove duplicates
+        recommendations = set.union(*recommendations)
+        # Remove input items from recommendations to avoid suggesting items the user already has
+        recommendations.difference_update(input_set)
+
+        return list(recommendations)
+    except Exception as e:
+        return jsonify('error: this feature is just a sample, and doesnt support all codes. Try "71100" or "86950 86930" as inputs'), 501 
+
+
 @app.route('/info/<string:id>', methods=['GET'])
 def ask_chat_gpt(id):
     llm = ChatOpenAI(openai_api_key=request.args.get('OPEN_API_KEY'))
@@ -98,12 +142,24 @@ def extract_rows_from_excel(file_path):
             rows[str(row[0])] = row
     return list(rows.values())
 
+
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Database recreation flag')
+    parser = argparse.ArgumentParser(description='server flags')
     parser.add_argument('--recreateDb', action='store_true', help='Flag to recreate the database')
+    parser.add_argument('--recreateAssociation', action='store_true', help='Flag to recreate the associations')
     parser.add_argument('--debug', action='store_true', help='Flag to start flask in debug mode')
     args = parser.parse_args()
 
+    if args.recreateAssociation:
+        print("Association requested to be recreated")
+        if os.path.exists(ASSOCIATIONS):
+            os.remove(ASSOCIATIONS)
+            print("Old association deleted")
+    if not os.path.exists(ASSOCIATIONS):
+        print("Creating new association")
+        create_associations()
+        print("New association created")
     if args.recreateDb:
         print("Database requested to be recreated")
         if os.path.exists(DATABASE):
